@@ -1,0 +1,5 @@
+secret*
+.DS_STORE
+*.swp
+~$*
+*.pyc
