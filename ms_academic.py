@@ -9,6 +9,7 @@ api_request_header = {
         }
 
 interpret_url = 'https://api.projectoxford.ai/academic/v1.0/interpret'
+evaluate_url = 'https://api.projectoxford.ai/academic/v1.0/evaluate'
 
 class MicrosoftAcademic(object):
 
@@ -18,6 +19,9 @@ class MicrosoftAcademic(object):
         """TODO: to be defined1. """
         self.header = api_request_header
         self.interpret_url = interpret_url
+        self.evaluate_url = evaluate_url
+        self.current_expr = ""
+        self.current_offset = 0
 
     def get_interpret_response(self, query='', count=1, offset=0):
         """Make a request to the interpret API and return a response
@@ -66,8 +70,42 @@ class MicrosoftAcademic(object):
                     'count': count,
                     'offset': offset
                 }
-        r = requests.get(self.interpret_url, params=params, headers=self.header)
+        r = requests.get(self.evaluate_url, params=params, headers=self.header)
         return r.json()
+
+    def interpret_and_evaluate(self, query, count=10):
+        """TODO: Docstring for interpret_and_evaluate.
+
+        :query: TODO
+        :returns: dictionary with keys: 'expr' which has the expression used for the evaluate method, and 'entities' which is a list of entities
+
+        """
+        j = self.get_interpret_response(query)
+        expr = self.get_evaluate_query_from_interpret_resp(j)
+        r = self.get_evaluate_response(expr, attributes='Id,Ti', count=count)
+        self.current_expr = r['expr']
+        self.current_offset = len(r['entities'])
+        return r
+
+    def paginate(self, expr="", offset=None):
+        """Returns a new page of results for an expression (from the evaluate method)
+
+        :expr: query expression for the evaluate method
+        :offset: offset value (should equal the number of entities already retrieved previously)
+        :returns: list of entities
+
+        """
+        if not expr:
+            expr = self.current_expr
+        if offset is None:
+            offset = self.current_offset
+        r = self.get_evaluate_response(expr, offset=offset)
+        if 'entities' in r:
+            entities = r['entities']
+            self.current_offset += len(r['entities'])
+            return r['entities']
+        else:
+            print(r)
 
         
 
