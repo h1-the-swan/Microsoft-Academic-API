@@ -22,6 +22,9 @@ class MicrosoftAcademic(object):
         self.evaluate_url = evaluate_url
         self.current_expr = ""
         self.current_offset = 0
+        self.attributes = kwargs.get('attributes')
+        if not self.attributes:
+            self.attributes = "Id"
 
     def get_interpret_response(self, query='', count=1, offset=0):
         """Make a request to the interpret API and return a response
@@ -73,21 +76,25 @@ class MicrosoftAcademic(object):
         r = requests.get(self.evaluate_url, params=params, headers=self.header)
         return r.json()
 
-    def interpret_and_evaluate(self, query, count=10):
+    def interpret_and_evaluate(self, query, attributes=None, count=10):
         """TODO: Docstring for interpret_and_evaluate.
 
         :query: TODO
         :returns: dictionary with keys: 'expr' which has the expression used for the evaluate method, and 'entities' which is a list of entities
 
         """
+        if attributes is None:
+            attributes = self.attributes
+
         j = self.get_interpret_response(query)
         expr = self.get_evaluate_query_from_interpret_resp(j)
-        r = self.get_evaluate_response(expr, attributes='Id,Ti', count=count)
+        r = self.get_evaluate_response(expr, attributes=attributes, count=count)
+        self. attributes = attributes
         self.current_expr = r['expr']
         self.current_offset = len(r['entities'])
         return r
 
-    def paginate(self, expr="", offset=None):
+    def paginate(self, expr="", offset=None, count=10):
         """Returns a new page of results for an expression (from the evaluate method)
 
         :expr: query expression for the evaluate method
@@ -99,13 +106,22 @@ class MicrosoftAcademic(object):
             expr = self.current_expr
         if offset is None:
             offset = self.current_offset
-        r = self.get_evaluate_response(expr, offset=offset)
+        r = self.get_evaluate_response(expr, attributes=self.attributes, offset=offset, count=count)
         if 'entities' in r:
             entities = r['entities']
             self.current_offset += len(r['entities'])
             return r['entities']
         else:
             print(r)
+
+    def get_paperids(self, entities_list):
+        """TODO: Docstring for get_paperids.
+
+        :entities_list: list of entities (dictionaries). should have 'Id' as a key
+        :returns: list of paper IDs as strings
+
+        """
+        return [str(entity['Id']) for entity in entities_list]
 
         
 
