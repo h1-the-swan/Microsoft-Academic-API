@@ -25,6 +25,23 @@ class MicrosoftAcademic(object):
         self.attributes = kwargs.get('attributes')
         if not self.attributes:
             self.attributes = "Id"
+        self.query_threshold = kwargs.get('query_threshold')
+        if not self.query_threshold:
+            self.query_threshold = 1000
+        self._number_of_queries = 0
+
+    @property
+    def number_of_queries(self):
+        return self._number_of_queries
+
+    @number_of_queries.setter
+    def number_of_queries(self, value):
+        if value > self.query_threshold:
+            # too many queries
+            raise RuntimeError("This instance has made {} queries. No more queries allowed".format(self.query_threshold))
+        else:
+            self._number_of_queries = value
+
 
     def get_interpret_response(self, query='', count=1, offset=0):
         """Make a request to the interpret API and return a response
@@ -41,6 +58,7 @@ class MicrosoftAcademic(object):
                     'offset': offset,
                     'complete': 0
                 }
+        self.number_of_queries += 1
         r = requests.get(self.interpret_url, params=params, headers=self.header)
         return r.json()
 
@@ -73,6 +91,7 @@ class MicrosoftAcademic(object):
                     'count': count,
                     'offset': offset
                 }
+        self.number_of_queries += 1
         r = requests.get(self.evaluate_url, params=params, headers=self.header)
         return r.json()
 
@@ -112,16 +131,14 @@ class MicrosoftAcademic(object):
             self.current_offset += len(r['entities'])
             return r['entities']
         else:
+            # something went wrong
             print(r)
 
     def get_paperids(self, entities_list):
-        """TODO: Docstring for get_paperids.
+        """Takes a list of entities as returned by the evaluate API and returns a list of paper IDs as strings.
 
         :entities_list: list of entities (dictionaries). should have 'Id' as a key
         :returns: list of paper IDs as strings
 
         """
         return [str(entity['Id']) for entity in entities_list]
-
-        
-
