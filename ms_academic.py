@@ -79,7 +79,7 @@ class MicrosoftAcademic(object):
         """Make a request to the evaluate API and return a response
 
         :expr: query expression
-        :attributes: attributes to include in the response (https://www.microsoft.com/cognitive-services/en-us/Academic-Knowledge-API/documentation/EntityAttributes) (default: 'Id')
+        :attributes: (comma-separated) attributes to include in the response (https://www.microsoft.com/cognitive-services/en-us/Academic-Knowledge-API/documentation/EntityAttributes) (default: 'Id')
         :count: number of entities to return (default: 10)
         :offset: offset value for pagination (default: 0)
         :returns: response dictionary (from requests.json())
@@ -95,11 +95,14 @@ class MicrosoftAcademic(object):
         r = requests.get(self.evaluate_url, params=params, headers=self.header)
         return r.json()
 
-    def interpret_and_evaluate(self, query, attributes=None, count=10):
+    def interpret_and_evaluate(self, query, attributes=None, count=10, return_expr=False):
         """TODO: Docstring for interpret_and_evaluate.
 
-        :query: TODO
-        :returns: dictionary with keys: 'expr' which has the expression used for the evaluate method, and 'entities' which is a list of entities
+        :query: text query to be passed to the requests module
+        :attributes: (comma-separated) attributes to include in the response (https://www.microsoft.com/cognitive-services/en-us/Academic-Knowledge-API/documentation/EntityAttributes) (default: 'Id')
+        :count: number of entities to return (default: 10)
+        :return_expr: if True, return a dictionary with keys: 'expr' which has the expression used for the evaluate method, and 'entities' which is a list of entities. Otherwise just return the list of entities (default: False)
+        :returns: list of entities
 
         """
         if attributes is None:
@@ -111,7 +114,10 @@ class MicrosoftAcademic(object):
         self. attributes = attributes
         self.current_expr = r['expr']
         self.current_offset = len(r['entities'])
-        return r
+        if return_expr is True:
+            return r
+        else:
+            return r['entities']
 
     def paginate(self, expr="", offset=None, count=10):
         """Returns a new page of results for an expression (from the evaluate method)
