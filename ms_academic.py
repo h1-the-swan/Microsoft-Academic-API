@@ -70,6 +70,8 @@ class MicrosoftAcademic(object):
         :returns: query to use with the API's evaluate method (string)
 
         """
+        if not resp_dict['interpretations']:
+            return ''
         q = resp_dict['interpretations'][interpret_idx]
         q = q['rules'][0]
         q = q['output']['value']
@@ -110,6 +112,8 @@ class MicrosoftAcademic(object):
 
         j = self.get_interpret_response(query)
         expr = self.get_evaluate_query_from_interpret_resp(j)
+        if not expr:
+            return []
         r = self.get_evaluate_response(expr, attributes=attributes, count=count)
         self. attributes = attributes
         self.current_expr = r['expr']
